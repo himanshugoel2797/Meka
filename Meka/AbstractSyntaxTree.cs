@@ -12,26 +12,25 @@ namespace Meka
         Comment,    //A single line comment     X
         Operator,   //An operator               X
         Variable,   //A variable                
+        Indexer,    //An indexer acces          X
         Type,       //A type/object             
-        Function,   //A function                
+        Function,   //A function                X
         Class,      //A class                   X
         Namespace,  //A namespace               X
         Interface,  //An interface              X
-        Attribute,  //An attribute              
+        Attribute,  //An attribute              X
         Struct,     //A struct                  X
         Enum,       //An enum                   X
         EnumMember, //An enum member            X
         Accessor,   //An accessor               X
-        Property,   //A property                
+        Property,   //A property                X
         Import,     //An import                 X
-        Alias,      //An alias                  
-        Definition, //A variable definition     
-        Constraint, //A constraint type         
-        Delegate,   //A delegate type           
-        Keyword,    //A keyword                 
-        Integer,    //An integer constant       
+        Alias,      //An alias                  X
+        Constraint, //A constraint type         X
+        Delegate,   //A delegate type           X
+        Keyword,    //A keyword                 X
+        Integer,    //An integer constant       X
         String,     //A string literal          X
-        Float       //A float constant          
     }
 
     public class AbstractSyntaxTree

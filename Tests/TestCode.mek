@@ -8,12 +8,28 @@ namespace Tests
         TestMemberB
     }
 
+    public struct TestStruct{
+        public string A;
+        public TestEnum b;
+    }
+
     public class TestCode
     {
+        public delegate Func<T>(T A);
+        public constraint Main(A) = B;
+
         //Test Comment
-        public static void Main(string[] args)
+        [SingleThreaded]
+        public static function void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            int X = 50 * 40;
+            TestStruct c = new TestStruct();
+            c.A = "Hello World!";
+            c.b = TestEnum.TestMemberB;
+            Console.WriteLine(c.A);
+            if(X == 2000){
+                Console.WriteLine("Hello Again!");
+            }
         }
     }
 }

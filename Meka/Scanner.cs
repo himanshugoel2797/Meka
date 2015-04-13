@@ -78,6 +78,29 @@ namespace Meka
             return false;   //If nothing works, return false
         }
 
+        public bool StringMatchesWordTerminator(string str, params char[] terminators)
+        {
+            //Check if the str matches
+            int i = 0;
+            for (i = Position; i < Position + str.Length; i++)
+            {
+                if (Source[i] != str[i - Position]) return false;
+            }
+
+            //Check if one of the expected terminators occurs next, ignoring all whitespace
+            while (i < Source.Length)
+            {
+                if (!char.IsWhiteSpace(Source[i]))
+                {
+                    return terminators.Contains(Source[i]);
+                }
+                i++;
+            }
+
+            //Default to false
+            return false;
+        }
+
         public char? GetRelativeNthCharacter(int chars)
         {
             if (Position + chars < Source.Length)

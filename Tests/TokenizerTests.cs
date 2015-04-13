@@ -47,7 +47,7 @@ namespace Tests
             string toTest = File.ReadAllText("TestCode.mek");
             Tokenizer t = new Tokenizer(toTest);
             string str = new StreamReader(t.Parse()).ReadToEnd();
-            Console.WriteLine(str);
+            Console.WriteLine(str.Replace(">", ">\n"));
         }
     }
 }
