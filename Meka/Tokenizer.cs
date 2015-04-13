@@ -20,10 +20,10 @@ namespace Meka
         }
 
 
-        void FillTagTillChar(char tag)
+        void FillTagTillChar(params char[] tag)
         {
             char? nxChar = scanner.GetNextCharacter();
-            while (nxChar != null && nxChar != tag)   //Read up till the first { which marks the start of the namespace body
+            while (nxChar != null && !tag.Contains((char)nxChar))   //Read up till the first { which marks the start of the namespace body
             {
                 if (!char.IsWhiteSpace((char)nxChar))
                 {
@@ -31,6 +31,7 @@ namespace Meka
                 }
                 nxChar = scanner.GetNextCharacter();
             }
+            scanner.Position--;
         }
 
         MemoryStream str;
@@ -69,6 +70,35 @@ namespace Meka
                         ObjectKind = AbstractObjectKind.String;
                         writer.Write("\"");
                     }
+                    #region Closing tag
+                    else if (currentChar == '}')
+                    {
+                        if (ObjectKindStack.Count > 0)
+                        {
+                            var tmp = ObjectKindStack.Pop();
+                            writer.Write("</" + tmp + ">");
+                        }
+                        else
+                        {
+                            //TODO Throw an exception because we have too many closing braces
+                        }
+                    }
+                    #endregion
+                    #region Opening Tag
+                    else if (currentChar == '{')
+                    {
+                        writer.Write("<Opening Tag>");
+                    }
+                    #endregion
+                    #region Enum Member
+                    else if (ObjectKindStack.Count > 0 && ObjectKindStack.Peek() == AbstractObjectKind.Enum) //Check if we're in an enum
+                    {
+                        ObjectKind = AbstractObjectKind.EnumMember;
+                        FillTagTillChar(',', '}');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
+                    }
+                    #endregion
                     #region Operators
                     else if (
                        (currentChar == '\\' && scanner.PeekNextCharacter() != '\\') ||         //Check for division, make sure it isn't a comment
@@ -136,11 +166,13 @@ namespace Meka
                         writer.Write(">");
                     }
                     #endregion
+                    #region Single Line Comment
                     else if (scanner.StringMatches(@"\\"))    //Check for a single line comment
                     {
                         ObjectKind = AbstractObjectKind.Comment;
                         writer.Write("\\*");
                     }
+                    #endregion
                     #region Accessors
                     else if (scanner.StringMatchesWord("public") || scanner.StringMatchesWord("private") || scanner.StringMatchesWord("protected") || scanner.StringMatchesWord("internal") || scanner.StringMatchesWord("static"))
                     {
@@ -198,19 +230,44 @@ namespace Meka
                         ObjectKindStack.Push(AbstractObjectKind.Class); //Push the definition of this class on to the stack
                     }
                     #endregion
-                    #region Closing tag
-                    else if (currentChar == '}')
+                    #region Struct
+                    else if (scanner.StringMatchesWord("struct"))
                     {
-                        if (ObjectKindStack.Count > 0)
-                        {
-                            var tmp = ObjectKindStack.Pop();
-                            writer.Write("</" + tmp + ">");
-                        }
-                        else
-                        {
-                            //TODO Throw an exception because we have too many closing braces
-                        }
+                        ObjectKind = AbstractObjectKind.Struct;
+                        scanner.Position += "struct".Length - 1;
+                        FillTagTillChar('{');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
+                        ObjectKindStack.Push(AbstractObjectKind.Struct);
                     }
+                    #endregion
+                    #region Enum
+                    else if (scanner.StringMatchesWord("enum"))
+                    {
+                        ObjectKind = AbstractObjectKind.Enum;
+                        scanner.Position += "enum".Length - 1;
+                        FillTagTillChar('{');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
+                        ObjectKindStack.Push(AbstractObjectKind.Enum);
+                    }
+                    #endregion
+                    #region Interface
+                    else if (scanner.StringMatchesWord("interface"))
+                    {
+                        ObjectKind = AbstractObjectKind.Interface;
+                        scanner.Position += "interface".Length - 1;
+                        FillTagTillChar('{');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
+                        ObjectKindStack.Push(AbstractObjectKind.Interface);
+                    }
+                    #endregion
+                    #region Delegate
+                    #endregion
+                    #region Property
+                    #endregion
+                    #region Alias
                     #endregion
                 }
                 else if (ObjectKind == AbstractObjectKind.String)  //If we are parsing a string

@@ -68,6 +68,16 @@ namespace Meka
             return false;   //If nothing works, return false
         }
 
+        public bool CurrentWordContains(string str)
+        {
+            string[] subStr = Source.Substring(Position).Trim().Split(null);        //Trim the substring and then split via whitespace
+            if (subStr.Length > 0)  //Make sure there is a first part to check and then check if it contains the specified string
+            {
+                return (subStr[0].Trim().Contains(str));
+            }
+            return false;   //If nothing works, return false
+        }
+
         public char? GetRelativeNthCharacter(int chars)
         {
             if (Position + chars < Source.Length)

@@ -2,6 +2,12 @@
 
 namespace Tests
 {
+    public enum TestEnum
+    {
+        TestMemberA = 0,
+        TestMemberB
+    }
+
     public class TestCode
     {
         //Test Comment
