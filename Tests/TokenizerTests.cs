@@ -40,5 +40,14 @@ namespace Tests
             Stream str = t.Parse();
             Assert.AreEqual(expected, new StreamReader(str).ReadToEnd());
         }
+
+        [TestMethod]
+        public void GeneralTest()
+        {
+            string toTest = File.ReadAllText("TestCode.mek");
+            Tokenizer t = new Tokenizer(toTest);
+            string str = new StreamReader(t.Parse()).ReadToEnd();
+            Console.WriteLine(str);
+        }
     }
 }

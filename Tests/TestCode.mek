@@ -1,0 +1,13 @@
+﻿using all from System;
+
+namespace Tests
+{
+    public class TestCode
+    {
+        //Test Comment
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Hello World!");
+        }
+    }
+}

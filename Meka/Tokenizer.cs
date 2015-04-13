@@ -16,10 +16,26 @@ namespace Meka
             scanner = new Scanner(file);
             str = new MemoryStream();
             writer = new StreamWriter(str);
+            ObjectKindStack = new Stack<AbstractObjectKind>();
+        }
+
+
+        void FillTagTillChar(char tag)
+        {
+            char? nxChar = scanner.GetNextCharacter();
+            while (nxChar != null && nxChar != tag)   //Read up till the first { which marks the start of the namespace body
+            {
+                if (!char.IsWhiteSpace((char)nxChar))
+                {
+                    writer.Write(nxChar);
+                }
+                nxChar = scanner.GetNextCharacter();
+            }
         }
 
         MemoryStream str;
         StreamWriter writer;
+        Stack<AbstractObjectKind> ObjectKindStack;
         AbstractObjectKind objKind;
         AbstractObjectKind ObjectKind
         {
@@ -41,10 +57,12 @@ namespace Meka
         {
             char? currentChar = scanner.GetNextCharacter();
 
+            //TODO Need to watch out for the fact that a string match for 'class' will pass for both 'class' and 'classmate' which would be incorrect
+
             //Parse until the end
             while (currentChar != null)
             {
-                if (ObjectKind != AbstractObjectKind.String && ObjectKind != AbstractObjectKind.Comment && currentChar != ' ')        //If we aren't parsing a string, skip all spaces
+                if (ObjectKind != AbstractObjectKind.String && ObjectKind != AbstractObjectKind.Comment && !char.IsWhiteSpace((char)currentChar))        //If we aren't parsing a string, skip all spaces
                 {
                     if (currentChar == '"')   //Check if we're parsing a string
                     {
@@ -123,11 +141,77 @@ namespace Meka
                         ObjectKind = AbstractObjectKind.Comment;
                         writer.Write("\\*");
                     }
-                    else if (scanner.StringMatches("public") || scanner.StringMatches("private") || scanner.StringMatches("protected") || scanner.StringMatches("internal"))
+                    #region Accessors
+                    else if (scanner.StringMatchesWord("public") || scanner.StringMatchesWord("private") || scanner.StringMatchesWord("protected") || scanner.StringMatchesWord("internal") || scanner.StringMatchesWord("static"))
                     {
-
+                        ObjectKind = AbstractObjectKind.Accessor;
+                        if (scanner.StringMatches("public"))
+                        {
+                            writer.Write("public");
+                            scanner.Position += "public".Length - 1;
+                        }
+                        else if (scanner.StringMatches("private"))
+                        {
+                            writer.Write("private");
+                            scanner.Position += "private".Length - 1;
+                        }
+                        else if (scanner.StringMatches("protected"))
+                        {
+                            writer.Write("protected");
+                            scanner.Position += "protected".Length - 1;
+                        }
+                        else if (scanner.StringMatches("internal"))
+                        {
+                            writer.Write("internal");
+                            scanner.Position += "internal".Length - 1;
+                        }
+                        else if (scanner.StringMatches("static"))
+                        {
+                            writer.Write("static");
+                            scanner.Position += "static".Length - 1;
+                        }
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
                     }
+                    #endregion
+                    #region Namespace
+                    else if (scanner.StringMatchesWord("namespace"))
+                    {
+                        ObjectKind = AbstractObjectKind.Namespace;
+                        scanner.Position += "namespace".Length - 1;
+                        FillTagTillChar('{');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
 
+                        ObjectKindStack.Push(AbstractObjectKind.Namespace); //Manage depth checking by pushing the definition of this namespace on to the stack
+                    }
+                    #endregion
+                    #region Class
+                    else if (scanner.StringMatchesWord("class"))
+                    {
+                        ObjectKind = AbstractObjectKind.Class;
+                        scanner.Position += "class".Length - 1;
+                        FillTagTillChar('{');
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
+
+                        ObjectKindStack.Push(AbstractObjectKind.Class); //Push the definition of this class on to the stack
+                    }
+                    #endregion
+                    #region Closing tag
+                    else if (currentChar == '}')
+                    {
+                        if (ObjectKindStack.Count > 0)
+                        {
+                            var tmp = ObjectKindStack.Pop();
+                            writer.Write("</" + tmp + ">");
+                        }
+                        else
+                        {
+                            //TODO Throw an exception because we have too many closing braces
+                        }
+                    }
+                    #endregion
                 }
                 else if (ObjectKind == AbstractObjectKind.String)  //If we are parsing a string
                 {
