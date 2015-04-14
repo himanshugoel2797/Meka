@@ -82,7 +82,7 @@ namespace Meka
                     #region End Statement
                     else if (currentChar == ';')
                     {
-                        writer.Write("<End Statement>");
+                        writer.Write("<EndStatement>");
                     }
                     #endregion
                     #region Closing tag
@@ -102,7 +102,7 @@ namespace Meka
                     #region Opening Tag
                     else if (currentChar == '{')
                     {
-                        writer.Write("<Opening Tag>");
+                        writer.Write("<OpeningTag>");
                     }
                     #endregion
                     #region Enum Member
@@ -270,7 +270,7 @@ namespace Meka
                     #region Property
                     else if (scanner.StringMatchesWord("property"))
                     {
-                        GenerateTag(AbstractObjectKind.Property, ';');
+                        GenerateTag(AbstractObjectKind.Property, ';');  //TODO think more about how to handle properties
                     }
                     #endregion
                     #region Alias
@@ -348,13 +348,13 @@ namespace Meka
                     #region Opening Bracket
                     else if (currentChar == '(')
                     {
-                        writer.Write("<Opening Bracket>");
+                        writer.Write("<OpeningBracket>");
                     }
                     #endregion
                     #region Closing Bracket
                     else if (currentChar == ')')
                     {
-                        writer.Write("<Closing Bracket>");
+                        writer.Write("<ClosingBracket>");
                     }
                     #endregion
                     #region Keywords
@@ -537,7 +537,7 @@ namespace Meka
                         writer.Write(currentChar);
 
                         char? nxChar = scanner.GetNextCharacter();
-                        while (nxChar != null && (char.IsLetterOrDigit((char)nxChar) || nxChar == '_'))   //Read up till the first { which marks the start of the namespace body
+                        while (nxChar != null && (char.IsLetterOrDigit((char)nxChar) || nxChar == '_' || nxChar == '<' || nxChar == '>' || nxChar == ','))   //Read up till the first { which marks the start of the namespace body
                         {
                             writer.Write(nxChar);
                             nxChar = scanner.GetNextCharacter();

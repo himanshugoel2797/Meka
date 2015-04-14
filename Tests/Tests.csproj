@@ -50,6 +50,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ParserTests.cs" />
     <None Include="TestCode.mek">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

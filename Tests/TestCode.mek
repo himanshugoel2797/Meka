@@ -27,9 +27,7 @@ namespace Tests
             c.A = "Hello World!";
             c.b = TestEnum.TestMemberB;
             Console.WriteLine(c.A);
-            if(X == 2000){
-                Console.WriteLine("Hello Again!");
-            }
+            
         }
     }
 }

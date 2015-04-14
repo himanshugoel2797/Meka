@@ -39,8 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractSyntaxTree.cs" />
+    <Compile Include="AbstractObjectKind.cs" />
+    <Compile Include="CodeGenerator.cs" />
+    <Compile Include="Parser.cs" />
     <Compile Include="Scanner.cs" />
+    <Compile Include="Syntax Tree\AbstractSyntaxNode.cs" />
+    <Compile Include="Syntax Tree\AbstractSyntaxTree.cs" />
+    <Compile Include="Syntax Tree\Import.cs" />
+    <Compile Include="Syntax Tree\SyntaxObject.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

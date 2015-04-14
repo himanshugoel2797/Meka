@@ -11,9 +11,9 @@ namespace Meka
         None,       //No Abstract Object        X
         Comment,    //A single line comment     X
         Operator,   //An operator               X
-        Variable,   //A variable                
+        Variable,   //A variable                X
         Indexer,    //An indexer acces          X
-        Type,       //A type/object             
+        Type,       //A type/object             X
         Function,   //A function                X
         Class,      //A class                   X
         Namespace,  //A namespace               X
@@ -31,18 +31,5 @@ namespace Meka
         Keyword,    //A keyword                 X
         Integer,    //An integer constant       X
         String,     //A string literal          X
-    }
-
-    public class AbstractSyntaxTree
-    {
-        public AbstractObjectKind ObjectKind;
-        public string value;
-        public List<AbstractSyntaxTree> Children = new List<AbstractSyntaxTree>();
-        public AbstractSyntaxTree Parent;
-
-        public void AddChild(AbstractSyntaxTree child)
-        {
-            Children.Add(child);
-        }
     }
 }
