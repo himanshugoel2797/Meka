@@ -422,7 +422,7 @@ namespace Meka
                     int index = collection.Parent.Children.IndexOf(collection);
                     if (index >= 1 && collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Attribute)
                     {
-                        while (collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Attribute)
+                        while (index > 0 && collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Attribute)
                         {
                             collection.SyntaxObjects.Add(new SyntaxObject()
                             {
@@ -438,7 +438,31 @@ namespace Meka
                 #region Enum Member IDs
                 else if (collection.ObjectKind == AbstractObjectKind.Enum)
                 {
+                    int id = 0;
                     //Parses the IDs of the enum members and sets them as SyntaxObjectMetadata
+                    for (int i = 0; i < collection.Children.Count; i++)
+                    {
+                        if (collection.Children[i].Name.Contains('='))
+                        {
+                            string[] tmpID = collection.Children[i].Name.Split('=');
+                            collection.Children[i].Name = tmpID[0];
+                            collection.Children[i].SyntaxObjects.Add(new SyntaxObject()
+                            {
+                                instruction = Instruction.EnumMemberValue,
+                                Value = tmpID[1]
+                            });
+                            int tmp2 = int.Parse(tmpID[1]);
+                            if (tmp2 >= id) id = tmp2 + 1;
+                        }
+                        else
+                        {
+                            collection.Children[i].SyntaxObjects.Add(new SyntaxObject()
+                            {
+                                instruction = Instruction.EnumMemberValue,
+                                Value = (id++).ToString()
+                            });
+                        }
+                    }
                 }
                 #endregion
             }
@@ -457,7 +481,7 @@ namespace Meka
                         collection.Parent.Children.RemoveAt(index - 1);
                     }
                     #endregion
-
+                    #region Command Completion
                     index = collection.Parent.Children.IndexOf(collection);
                     if (index >= 0 && index + 1 < collection.Parent.Children.Count && collection.Parent.ObjectKind != AbstractObjectKind.Variable && collection.Parent.Children[index + 1].ObjectKind == AbstractObjectKind.Operator && collection.Parent.Children[index + 1].Name == "=")
                     {
@@ -468,6 +492,31 @@ namespace Meka
                             collection.Parent.Children.RemoveAt(index + 1);
                         }
                     }
+                    #endregion
+                    #region Access Operator
+                    index = collection.Parent.Children.IndexOf(collection);
+                    if (index >= 0 && index + 1 < collection.Parent.Children.Count && collection.Parent.Children[index + 1].ObjectKind == AbstractObjectKind.Operator && collection.Parent.Children[index + 1].Name == ".")
+                    {
+                        while (index + 1 < collection.Parent.Children.Count && collection.Parent.Children[index + 1].ObjectKind != AbstractObjectKind.EndStatement)
+                        {
+                            collection.Parent.Children[index + 1].Parent = collection;
+                            collection.Children.Add(collection.Parent.Children[index + 1]);
+                            collection.Parent.Children.RemoveAt(index + 1);
+                        }
+                    }
+                    #endregion
+                    #region Function Call Identification
+                    //Folds attributes into the owner's metadata
+                    index = collection.Parent.Children.IndexOf(collection);
+                    if (index >= 0 && index + 1 < collection.Parent.Children.Count && collection.Parent.Children[index + 1].ObjectKind == AbstractObjectKind.None && collection.Parent.Children[index + 1].Name == "OpeningBracket")
+                    {
+                        collection.Parent.Children[index + 1].Parent = collection;
+                        collection.Parent.Children[index].ObjectKind = AbstractObjectKind.FunctionCall; //Everything here is definitely a function call
+                        collection.Children.Add(collection.Parent.Children[index + 1]);
+                        collection.Parent.Children.RemoveAt(index + 1);
+                    }
+                    #endregion
+                    
                 }
             }
 

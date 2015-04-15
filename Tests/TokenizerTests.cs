@@ -22,7 +22,7 @@ namespace Tests
         [TestMethod]
         public void CommentTest()
         {
-            string toTest = "using lol from loli;\\\\\"hello world\\t\\n 0 1-2%5139ud\\tlk1238-1hdakjn\\t\\n\\r\"\n";
+            string toTest = "using lol from loli;//\\\"hello world\\t\\n 0 1-2%5139ud\\tlk1238-1hdakjn\\t\\n\\r\"\n";
             string expected = "<Import lol:loli><Comment \\*\\\"hello world\\t\\n 0 1-2%5139ud\\tlk1238-1hdakjn\\t\\n\\r\"*\\>";
 
             Tokenizer t = new Tokenizer(toTest);

@@ -79,6 +79,14 @@ namespace Meka
                         ObjectKind = AbstractObjectKind.String;
                         writer.Write("\"");
                     }
+                    #region Single Line Comment
+                    else if (scanner.StringMatches(@"//"))    //Check for a single line comment
+                    {
+                        scanner.Position++;     //Skip the next '/' character
+                        ObjectKind = AbstractObjectKind.Comment;
+                        writer.Write("\\*");
+                    }
+                    #endregion
                     #region End Statement
                     else if (currentChar == ';')
                     {
@@ -183,14 +191,6 @@ namespace Meka
                         }
                         ObjectKind = AbstractObjectKind.None;
                         writer.Write(">");
-                    }
-                    #endregion
-                    #region Single Line Comment
-                    else if (scanner.StringMatches(@"//"))    //Check for a single line comment
-                    {
-                        scanner.Position++;     //Skip the next '/' character
-                        ObjectKind = AbstractObjectKind.Comment;
-                        writer.Write("\\*");
                     }
                     #endregion
                     #region Accessors
