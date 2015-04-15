@@ -8,12 +8,11 @@ namespace Meka.Syntax_Tree
 {
     public enum Instruction
     {
-        Call,
-        Definition,
-        Assignment,
         Accessor,
-        Operation,
-        Type
+        ParameterType,
+        ParameterValue,
+        Attribute,
+        EnumMemberValue
     }
     public class SyntaxObject
     {

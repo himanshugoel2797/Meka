@@ -23,17 +23,19 @@ namespace Meka
             }
         }
 
-        void AccessorDepthApply(string tag, AbstractObjectKind kind)
+        #region Parser
+        void AccessorDepthApply(string tag, AbstractObjectKind kind, bool applyAccessors = false)
         {
             string Name = tag.Replace(kind.ToString() + " ", string.Empty);
 
             //Create the collection entry for the AbstractSyntaxKind, adding it to the global node and making it the current deepest
             var tmp = new AbstractSyntaxCollection()
             {
-                Name = Name,
+                Name = Name.Trim(),
                 ObjectKind = kind,
                 Parent = DeepestNode
             };
+            if (applyAccessors) tmp.SyntaxObjects = Accessors.ToList();
             DeepestNode.Children.Add(tmp);
             DeepestNode = tmp;
             collectionHeirarchy.Push(Name);
@@ -121,7 +123,7 @@ namespace Meka
                             }
 
                             //Things inside functions can not have accessors
-                            if (Accessors.Count == 0 && collectionHeirarchyKind.Count > 0 && collectionHeirarchyKind.Peek() != AbstractObjectKind.Function)   //Default to private for anything which requires an accessor but hasn't been given one
+                            if (Accessors.Count == 0 && collectionHeirarchyKind.Count > 0)   //Default to private for anything which requires an accessor but hasn't been given one
                             {
                                 Accessors.Add(new SyntaxObject()
                                 {
@@ -133,49 +135,49 @@ namespace Meka
                             #region Namespace
                             if (tag.StartsWith("Namespace "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Namespace);
+                                AccessorDepthApply(tag, AbstractObjectKind.Namespace, true);
                             }
                             #endregion
                             #region Class
                             else if (tag.StartsWith("Class "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Class);
+                                AccessorDepthApply(tag, AbstractObjectKind.Class, true);
                             }
                             #endregion
                             #region Interface
                             else if (tag.StartsWith("Interface "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Interface);
+                                AccessorDepthApply(tag, AbstractObjectKind.Interface, true);
                             }
                             #endregion
                             #region Enum
                             else if (tag.StartsWith("Enum "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Enum);
+                                AccessorDepthApply(tag, AbstractObjectKind.Enum, true);
                             }
                             #endregion
                             #region Struct
                             else if (tag.StartsWith("Struct "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Struct);
+                                AccessorDepthApply(tag, AbstractObjectKind.Struct, true);
                             }
                             #endregion
                             #region Delegate
                             else if (tag.StartsWith("Delegate "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Delegate);
+                                AccessorDepthApply(tag, AbstractObjectKind.Delegate, true);
                             }
                             #endregion
                             #region Constraint
                             else if (tag.StartsWith("Constraint "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Constraint);
+                                AccessorDepthApply(tag, AbstractObjectKind.Constraint, true);
                             }
                             #endregion
                             #region Function
                             else if (tag.StartsWith("Function "))
                             {
-                                AccessorDepthApply(tag, AbstractObjectKind.Function);
+                                AccessorDepthApply(tag, AbstractObjectKind.Function, true);
                             }
                             #endregion
                             #region Variable
@@ -249,6 +251,7 @@ namespace Meka
                             #region Operators
                             else if (tag.StartsWith("Operator "))
                             {
+                                //TODO Generate extra nodes for +=, -=, *=, /=, %=, !=, ^=, |=, &=
                                 DeepestNode.Children.Add(new AbstractSyntaxCollection()
                                 {
                                     ObjectKind = AbstractObjectKind.Operator,
@@ -278,6 +281,7 @@ namespace Meka
                                 DepthUnApply(AbstractObjectKind.None);
                             }
                             #endregion
+                            #region End Statement
                             else if (tag.StartsWith("EndStatement"))
                             {
                                 if (collectionHeirarchyKind.Peek() == AbstractObjectKind.Constraint || collectionHeirarchyKind.Peek() == AbstractObjectKind.Delegate)
@@ -292,10 +296,11 @@ namespace Meka
                                     {
                                         Parent = DeepestNode,
                                         Name = "EndStatement",
-                                        ObjectKind = AbstractObjectKind.None
+                                        ObjectKind = AbstractObjectKind.EndStatement
                                     });
                                 }
                             }
+                            #endregion
                             #region String
                             else if (tag.StartsWith("String "))
                             {
@@ -358,6 +363,41 @@ namespace Meka
             syntaxTree.Nodes.Add(DeepestNode);  //TODO we might want to check to make sure that the heirarchy is empty to make sure the global root is set
             return SimplifyTree(syntaxTree);
         }
+        #endregion
+
+        #region Pretty Printer
+        public string PrettyPrint(AbstractSyntaxTree tree)
+        {
+            for (int i = 0; i < tree.Nodes.Count; i++)
+            {
+                RecursePrint(tree.Nodes[i]);
+            }
+            return builder.ToString();
+        }
+        StringBuilder builder = new StringBuilder();
+        int depth = 0;
+        private void RecursePrint(AbstractSyntaxCollection collection)
+        {
+            string tabs = "";
+            depth++;
+            for (int d = 0; d < depth - 1; d++)
+            {
+                tabs += "\t";
+            }
+
+            for (int i = 0; i < collection.Children.Count; i++)
+            {
+                builder.Append(tabs + collection.Children[i].ObjectKind + " : " + collection.Children[i].Name);
+                for (int x = 0; x < collection.Children[i].SyntaxObjects.Count; x++)
+                {
+                    builder.Append(", " + collection.Children[i].SyntaxObjects[x].instruction + " : " + collection.Children[i].SyntaxObjects[x].Value);
+                }
+                builder.AppendLine();
+                RecursePrint(collection.Children[i]);
+            }
+            depth--;
+        }
+        #endregion
 
         private AbstractSyntaxTree SimplifyTree(AbstractSyntaxTree tree)
         {
@@ -368,34 +408,76 @@ namespace Meka
             return tree;
         }
 
-        int depth = 0;
         private AbstractSyntaxCollection CorrectTree(AbstractSyntaxCollection collection)
         {
-            string tabs = "";
-            depth++;
-            for (int d = 0; d < depth; d++)
-            {
-                tabs += "\t";
-            }
-
-            for (int i = 0; i < collection.Children.Count; i++)
-            {
-                Console.WriteLine(tabs + collection.Children[i].ObjectKind + " : " + collection.Children[i].Name);
-                collection.Children[i] = CorrectTree(collection.Children[i]);   //Correct all subnodes first
-            }
 
             if (collection.Children.Count > 0)
             {
-                if (collection.ObjectKind == AbstractObjectKind.Function)   //Correct statements which should only be in a function
-                {
-                    for (int i = 0; i < collection.Children.Count; i++)
-                    {
+                //TODO Parse variables and separate them from function calls
 
+                #region Attribute Folding
+                if (collection.ObjectKind == AbstractObjectKind.Function || collection.ObjectKind == AbstractObjectKind.Class)   //Correct statements which should only be in a function
+                {
+                    //Folds attributes into the owner's metadata
+                    int index = collection.Parent.Children.IndexOf(collection);
+                    if (index >= 1 && collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Attribute)
+                    {
+                        while (collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Attribute)
+                        {
+                            collection.SyntaxObjects.Add(new SyntaxObject()
+                            {
+                                instruction = Instruction.Attribute,
+                                Value = collection.Parent.Children[index - 1].Name
+                            });
+                            collection.Parent.Children.RemoveAt(index - 1);
+                            index--;
+                        }
                     }
                 }
-
+                #endregion
+                #region Enum Member IDs
+                else if (collection.ObjectKind == AbstractObjectKind.Enum)
+                {
+                    //Parses the IDs of the enum members and sets them as SyntaxObjectMetadata
+                }
+                #endregion
             }
-            depth--;
+            else
+            {
+                if (collection.ObjectKind == AbstractObjectKind.Variable)   //Correct statements which should only be in a function
+                {
+                    #region Type Folding
+                    //Folds attributes into the owner's metadata
+                    int index = collection.Parent.Children.IndexOf(collection);
+                    if (index >= 1 && (collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Type || collection.Parent.Children[index - 1].ObjectKind == AbstractObjectKind.Variable))
+                    {
+                        collection.Parent.Children[index - 1].Parent = collection;
+                        collection.Parent.Children[index - 1].ObjectKind = AbstractObjectKind.Type; //Everything here is definitely a type
+                        collection.Children.Add(collection.Parent.Children[index - 1]);
+                        collection.Parent.Children.RemoveAt(index - 1);
+                    }
+                    #endregion
+
+                    index = collection.Parent.Children.IndexOf(collection);
+                    if (index >= 0 && index + 1 < collection.Parent.Children.Count && collection.Parent.ObjectKind != AbstractObjectKind.Variable && collection.Parent.Children[index + 1].ObjectKind == AbstractObjectKind.Operator && collection.Parent.Children[index + 1].Name == "=")
+                    {
+                        while (index + 1 < collection.Parent.Children.Count && collection.Parent.Children[index + 1].ObjectKind != AbstractObjectKind.EndStatement)
+                        {
+                            collection.Parent.Children[index + 1].Parent = collection;
+                            collection.Children.Add(collection.Parent.Children[index + 1]);
+                            collection.Parent.Children.RemoveAt(index + 1);
+                        }
+                    }
+                }
+            }
+
+            #region Recursor
+            for (int i = 0; i < collection.Children.Count; i++)
+            {
+                var tmp = CorrectTree(collection.Children[i]);   //Correct all subnodes first
+            }
+            #endregion
+
             return collection;
         }
     }

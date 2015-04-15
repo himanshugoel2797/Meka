@@ -31,5 +31,6 @@ namespace Meka
         Keyword,    //A keyword                 X
         Integer,    //An integer constant       X
         String,     //A string literal          X
+        EndStatement//End of statement          X
     }
 }

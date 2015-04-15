@@ -16,6 +16,7 @@ namespace Tests
             Tokenizer t = new Tokenizer(toTest);
             Parser p = new Parser(t.Parse());
             var tmp = p.Parse();
+            Console.Write(p.PrettyPrint(tmp));
         }
     }
 }
