@@ -23,7 +23,7 @@ namespace Tests
         public static function void Main(string[] args)
         {
             int X = 50 * 40;
-            TestStruct c = new TestStruct();
+            TestStruct c = new TestStruct( );
             c.A = "Hello World!";
             c.b = TestEnum.TestMemberB;
             Console.WriteLine(c.A);

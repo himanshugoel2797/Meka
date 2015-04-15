@@ -56,6 +56,7 @@ namespace Meka
 
         AbstractSyntaxTree syntaxTree = new AbstractSyntaxTree();
         AbstractSyntaxCollection DeepestNode = new AbstractSyntaxCollection();  //Initially represents the global root node
+        AbstractSyntaxCollection PreviousNode = new AbstractSyntaxCollection(); //the previous node
 
         Stack<string> collectionHeirarchy = new Stack<string>();
         Stack<AbstractObjectKind> collectionHeirarchyKind = new Stack<AbstractObjectKind>();
@@ -89,7 +90,6 @@ namespace Meka
                     {
                         //Get the tag from the start position to here
                         string tag = scanner.Source.Substring(startPosition, scanner.Position - startPosition);
-                        Console.WriteLine(tag);
 
                         #region Import
                         if (tag.StartsWith("Import "))
@@ -115,13 +115,13 @@ namespace Meka
                             tag.StartsWith("Type "))
                         //This handles tags which can legally have accessors before them
                         {
-                            if (collectionHeirarchyKind.Peek() == AbstractObjectKind.Function && Accessors.Count > 0)
+                            if (collectionHeirarchyKind.Count > 0 && collectionHeirarchyKind.Peek() == AbstractObjectKind.Function && Accessors.Count > 0)
                             {
                                 //Throw exception, accessors are not allowed here
                             }
 
                             //Things inside functions can not have accessors
-                            if (Accessors.Count == 0 && collectionHeirarchyKind.Peek() != AbstractObjectKind.Function)   //Default to private for anything which requires an accessor but hasn't been given one
+                            if (Accessors.Count == 0 && collectionHeirarchyKind.Count > 0 && collectionHeirarchyKind.Peek() != AbstractObjectKind.Function)   //Default to private for anything which requires an accessor but hasn't been given one
                             {
                                 Accessors.Add(new SyntaxObject()
                                 {
@@ -246,6 +246,7 @@ namespace Meka
                             {
                                 DepthUnApply(AbstractObjectKind.Struct);
                             }
+                            #region Operators
                             else if (tag.StartsWith("Operator "))
                             {
                                 DeepestNode.Children.Add(new AbstractSyntaxCollection()
@@ -255,6 +256,8 @@ namespace Meka
                                     Parent = DeepestNode
                                 });
                             }
+                            #endregion
+                            #region EnumMember
                             else if (tag.StartsWith("EnumMember"))
                             {
                                 DeepestNode.Children.Add(new AbstractSyntaxCollection()
@@ -264,6 +267,7 @@ namespace Meka
                                     Parent = DeepestNode
                                 });
                             }
+                            #endregion
                             #region Brackets
                             else if (tag.StartsWith("OpeningBracket"))
                             {
@@ -282,7 +286,17 @@ namespace Meka
                                     collectionHeirarchy.Pop();
                                     collectionHeirarchyKind.Pop();
                                 }
+                                else
+                                {
+                                    DeepestNode.Children.Add(new AbstractSyntaxCollection()
+                                    {
+                                        Parent = DeepestNode,
+                                        Name = "EndStatement",
+                                        ObjectKind = AbstractObjectKind.None
+                                    });
+                                }
                             }
+                            #region String
                             else if (tag.StartsWith("String "))
                             {
                                 DeepestNode.Children.Add(new AbstractSyntaxCollection()
@@ -292,6 +306,8 @@ namespace Meka
                                     Parent = DeepestNode
                                 });
                             }
+                            #endregion
+                            #region Integer Constant
                             else if (tag.StartsWith("Integer "))
                             {
                                 DeepestNode.Children.Add(new AbstractSyntaxCollection()
@@ -301,6 +317,31 @@ namespace Meka
                                     Parent = DeepestNode
                                 });
                             }
+                            #endregion
+                            #region Attribute
+                            else if (tag.StartsWith("Attribute "))
+                            {
+                                DeepestNode.Children.Add(new AbstractSyntaxCollection()
+                                {
+                                    Parent = DeepestNode,
+                                    Name = tag.Replace("Attribute ", string.Empty),
+                                    ObjectKind = AbstractObjectKind.Attribute
+                                });
+                                PreviousNode = DeepestNode.Children.Last();
+                            }
+                            #endregion
+                            #region Keyword
+                            else if (tag.StartsWith("Keyword "))
+                            {
+                                DeepestNode.Children.Add(new AbstractSyntaxCollection()
+                                {
+                                    Parent = DeepestNode,
+                                    Name = tag.Replace("Keyword ", string.Empty),
+                                    ObjectKind = AbstractObjectKind.Keyword
+                                });
+                                PreviousNode = DeepestNode.Children.Last();
+                            }
+                            #endregion
                         }
                         #endregion
                         #region OpeningTag
@@ -315,7 +356,47 @@ namespace Meka
                 currentChar = scanner.GetNextCharacter();
             }
             syntaxTree.Nodes.Add(DeepestNode);  //TODO we might want to check to make sure that the heirarchy is empty to make sure the global root is set
-            return syntaxTree;
+            return SimplifyTree(syntaxTree);
+        }
+
+        private AbstractSyntaxTree SimplifyTree(AbstractSyntaxTree tree)
+        {
+            for (int i = 0; i < tree.Nodes.Count; i++)
+            {
+                tree.Nodes[i] = CorrectTree(tree.Nodes[i]);
+            }
+            return tree;
+        }
+
+        int depth = 0;
+        private AbstractSyntaxCollection CorrectTree(AbstractSyntaxCollection collection)
+        {
+            string tabs = "";
+            depth++;
+            for (int d = 0; d < depth; d++)
+            {
+                tabs += "\t";
+            }
+
+            for (int i = 0; i < collection.Children.Count; i++)
+            {
+                Console.WriteLine(tabs + collection.Children[i].ObjectKind + " : " + collection.Children[i].Name);
+                collection.Children[i] = CorrectTree(collection.Children[i]);   //Correct all subnodes first
+            }
+
+            if (collection.Children.Count > 0)
+            {
+                if (collection.ObjectKind == AbstractObjectKind.Function)   //Correct statements which should only be in a function
+                {
+                    for (int i = 0; i < collection.Children.Count; i++)
+                    {
+
+                    }
+                }
+
+            }
+            depth--;
+            return collection;
         }
     }
 }

@@ -264,7 +264,19 @@ namespace Meka
                     #region Delegate
                     else if (scanner.StringMatchesWord("delegate"))
                     {
-                        GenerateTag(AbstractObjectKind.Delegate, ';');
+                        ObjectKind = AbstractObjectKind.Delegate;
+                        scanner.Position += AbstractObjectKind.Delegate.ToString().Length - 1;
+
+                        char? nxChar = scanner.GetNextCharacter();
+                        while (nxChar != null && nxChar != ';')   //Read up till the first { which marks the start of the namespace body
+                        {
+                            if (nxChar != '\n' && nxChar != '\r' && nxChar != '\t') writer.Write(nxChar);
+                            nxChar = scanner.GetNextCharacter();
+                        }
+                        scanner.Position--;
+
+                        ObjectKind = AbstractObjectKind.None;
+                        writer.Write(">");
                     }
                     #endregion
                     #region Property
@@ -284,11 +296,17 @@ namespace Meka
                     {
                         ObjectKind = AbstractObjectKind.Integer;
                         writer.Write(currentChar);
+                        int dotCount = 0;
 
                         char? nxChar = scanner.GetNextCharacter();
-                        while (nxChar != null && char.IsDigit((char)nxChar))   //Read up till the first { which marks the start of the namespace body
+                        while (nxChar != null && (char.IsDigit((char)nxChar) || nxChar == '.'))   //Read up till the first { which marks the start of the namespace body
                         {
                             writer.Write(nxChar);
+                            if (nxChar == '.') dotCount++;
+                            if (dotCount > 1)
+                            {
+                                //TODO throw exception, this is not a valid number
+                            }
                             nxChar = scanner.GetNextCharacter();
                         }
                         scanner.Position--;
